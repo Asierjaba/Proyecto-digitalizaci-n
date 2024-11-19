@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Juego de saltar cuadrados</title>
+  <title>Juego de saltar</title>
   <style>
     body {
       margin: 0;
@@ -63,7 +63,7 @@
 
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
-    const COLLECTIBLE_SIZE = 30; // Tamaño fijo de los cuadrados verdes
+    const ELEMENT_SIZE = 30; // Tamaño fijo para obstáculos y recolectables
 
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
@@ -75,38 +75,44 @@
     }
 
     // Crear un elemento aleatorio (recolectable u obstáculo) asegurando que no se toquen
-    function createElement(type) {
-      const size = type === 'collectible' ? COLLECTIBLE_SIZE : Math.random() * 30 + 20;
+    function createElement(type, existingElements) {
       const x = canvas.width;
-      const y = canvas.height - size - 20; // Cerca del suelo
+      const y = canvas.height - ELEMENT_SIZE - 20; // Cerca del suelo
       const color = type === 'collectible' ? 'green' : 'red';
-      return { x, y, size, color, type };
-    }
+      const newElement = { x, y, size: ELEMENT_SIZE, color, type };
 
-    function isOverlapping(newElement, existingElements) {
-      return existingElements.some((elem) => {
-        return (
+      // Evitar solapamientos
+      for (let i = 0; i < existingElements.length; i++) {
+        const elem = existingElements[i];
+        if (
           newElement.x < elem.x + elem.size &&
           newElement.x + newElement.size > elem.x &&
           newElement.y < elem.y + elem.size &&
           newElement.y + newElement.size > elem.y
-        );
-      });
+        ) {
+          return null; // Devuelve null si hay solapamiento
+        }
+      }
+      return newElement;
     }
 
     function generateElements() {
       if (!gameOver) {
-        let newCollectible;
+        const elements = [...collectibles, ...obstacles];
+        let newCollectible = null;
+        let newObstacle = null;
+
         do {
-          newCollectible = createElement('collectible');
-        } while (isOverlapping(newCollectible, obstacles));
+          newCollectible = createElement('collectible', elements);
+        } while (!newCollectible);
+
         collectibles.push(newCollectible);
 
         if (Math.random() < 0.7) {
-          let newObstacle;
           do {
-            newObstacle = createElement('obstacle');
-          } while (isOverlapping(newObstacle, collectibles));
+            newObstacle = createElement('obstacle', elements);
+          } while (!newObstacle);
+
           obstacles.push(newObstacle);
         }
       }
