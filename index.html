@@ -63,7 +63,7 @@
 
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
-    const ELEMENT_SIZE = 30; // Tamaño fijo para obstáculos y recolectables
+    const ELEMENT_SIZE = 30; // Tamaño fijo para los recolectables
 
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
@@ -79,7 +79,9 @@
       const x = canvas.width;
       const y = canvas.height - ELEMENT_SIZE - 20; // Cerca del suelo
       const color = type === 'collectible' ? 'green' : 'red';
-      const newElement = { x, y, size: ELEMENT_SIZE, color, type };
+      const size = type === 'obstacle' ? Math.floor(Math.random() * 50) + 20 : ELEMENT_SIZE; // Obstáculos con tamaños aleatorios
+
+      const newElement = { x, y, size, color, type };
 
       // Evitar solapamientos
       for (let i = 0; i < existingElements.length; i++) {
