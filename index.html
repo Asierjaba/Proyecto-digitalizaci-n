@@ -120,17 +120,17 @@
         let newCollectible = null;
         let newObstacle = null;
 
+        // Crear y añadir recolectables
         do {
           newCollectible = createElement('collectible', elements, false);
         } while (!newCollectible);
-
         collectibles.push(newCollectible);
 
-        if (Math.random() < 0.7) {
+        // Crear y añadir obstáculos
+        if (Math.random() < 0.7) {  // 70% de probabilidad de generar un obstáculo
           do {
             newObstacle = createElement('obstacle', elements, true);
           } while (!newObstacle);
-
           obstacles.push(newObstacle);
         }
       }
