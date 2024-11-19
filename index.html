@@ -63,7 +63,7 @@
 
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
-    const ELEMENT_SIZE = 30; // Tamaño fijo para los recolectables
+    const ELEMENT_SIZE = 30; // Tamaño fijo para obstáculos y recolectables
 
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
@@ -75,15 +75,13 @@
     }
 
     // Crear un elemento aleatorio (recolectable u obstáculo) asegurando que no se toquen
-    function createElement(type, existingElements, isObstacle = false) {
+    function createElement(type, existingElements) {
       const x = canvas.width;
       const y = canvas.height - ELEMENT_SIZE - 20; // Cerca del suelo
       const color = type === 'collectible' ? 'green' : 'red';
-      const size = isObstacle ? Math.floor(Math.random() * 50) + 20 : ELEMENT_SIZE; // Obstáculos con tamaños aleatorios
+      const newElement = { x, y, size: ELEMENT_SIZE, color, type };
 
-      const newElement = { x, y, size, color, type };
-
-      // Evitar solapamientos con otros elementos del mismo tipo
+      // Evitar solapamientos
       for (let i = 0; i < existingElements.length; i++) {
         const elem = existingElements[i];
         if (
@@ -95,22 +93,6 @@
           return null; // Devuelve null si hay solapamiento
         }
       }
-
-      // Si es un obstáculo, evitar solapamiento con los recolectables
-      if (isObstacle) {
-        for (let i = 0; i < collectibles.length; i++) {
-          const collectible = collectibles[i];
-          if (
-            newElement.x < collectible.x + collectible.size &&
-            newElement.x + newElement.size > collectible.x &&
-            newElement.y < collectible.y + collectible.size &&
-            newElement.y + newElement.size > collectible.y
-          ) {
-            return null; // Devuelve null si colisiona con un recolectable
-          }
-        }
-      }
-
       return newElement;
     }
 
@@ -120,17 +102,17 @@
         let newCollectible = null;
         let newObstacle = null;
 
-        // Crear y añadir recolectables
         do {
-          newCollectible = createElement('collectible', elements, false);
+          newCollectible = createElement('collectible', elements);
         } while (!newCollectible);
+
         collectibles.push(newCollectible);
 
-        // Crear y añadir obstáculos
-        if (Math.random() < 0.7) {  // 70% de probabilidad de generar un obstáculo
+        if (Math.random() < 0.7) {
           do {
-            newObstacle = createElement('obstacle', elements, true);
+            newObstacle = createElement('obstacle', elements);
           } while (!newObstacle);
+
           obstacles.push(newObstacle);
         }
       }
