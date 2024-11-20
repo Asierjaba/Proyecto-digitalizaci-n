@@ -21,13 +21,6 @@
       font-size: 20px;
       color: #333;
     }
-    #highScore {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 20px;
-      color: #333;
-    }
     #gameOverScreen {
       display: none;
       position: absolute;
@@ -51,8 +44,7 @@
   </style>
 </head>
 <body>
-  <div id="score">Puntos: 0</div>
-  <div id="highScore">Mejor puntuación: 0</div>
+  <div id="score">Puntos: 0 | Mejor puntuación: 0</div>
   <div id="gameOverScreen">
     <h1>¡Perdiste!</h1>
     <p>Puntuación final: <span id="finalScore"></span></p>
@@ -66,7 +58,8 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    let player, collectibles, obstacles, score, gameOver, highScore;
+    let player, collectibles, obstacles, score, gameOver, highScore, speed;
+
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
     const ELEMENT_SIZE = 30;
@@ -77,9 +70,14 @@
       obstacles = [];
       score = 0;
       gameOver = false;
+      speed = 5;
       highScore = parseInt(localStorage.getItem('highScore')) || 0;
-      document.getElementById('highScore').textContent = `Mejor puntuación: ${highScore}`;
+      updateScoreDisplay();
       document.getElementById('gameOverScreen').style.display = 'none';
+    }
+
+    function updateScoreDisplay() {
+      document.getElementById('score').textContent = `Puntos: ${score} | Mejor puntuación: ${highScore}`;
     }
 
     function createElement(type, existingElements) {
@@ -90,7 +88,7 @@
       let points;
 
       if (type === 'collectible') {
-        color = Math.random() < 0.1 ? 'gold' : 'green'; // 10% de probabilidad de ser dorado
+        color = Math.random() < 0.1 ? 'gold' : 'green'; // 10% probabilidad de ser dorado
         points = color === 'gold' ? 5 : 1;
       } else {
         color = 'red';
@@ -161,7 +159,7 @@
     function updateElements(elements) {
       for (let i = elements.length - 1; i >= 0; i--) {
         const elem = elements[i];
-        elem.x -= 5;
+        elem.x -= speed;
         if (elem.x + elem.size < 0) elements.splice(i, 1);
 
         if (
@@ -173,6 +171,7 @@
           if (elem.type === 'collectible') {
             score += elem.points;
             elements.splice(i, 1);
+            updateScoreDisplay();
           } else if (elem.type === 'obstacle') {
             endGame();
           }
@@ -188,7 +187,6 @@
       if (score > highScore) {
         localStorage.setItem('highScore', score);
         highScore = score;
-        document.getElementById('highScore').textContent = `Mejor puntuación: ${highScore}`;
       }
     }
 
@@ -211,7 +209,10 @@
       collectibles.forEach(drawSquare);
       obstacles.forEach(drawSquare);
 
-      document.getElementById('score').textContent = `Puntos: ${score}`;
+      if (score % 10 === 0 && score > 0) {
+        speed += 0.02; // Incrementar velocidad gradualmente
+      }
+
       requestAnimationFrame(gameLoop);
     }
 
