@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -37,6 +38,33 @@
       color: white;
       border-radius: 5px;
     }
+    #gameOverScreen button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Puntos: 0</div>
+  <div id="gameOverScreen">
+    <h1>¡Perdiste!</h1>
+    <p>Puntuación final: <span id="finalScore"></span></p>
+    <button onclick="restartGame()">Reiniciar</button>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Variables del juego
+    let player, collectibles, obstacles, score, gameOver;
+
+    const GRAVITY = 0.5;
+    const JUMP_FORCE = -12;
+    const ELEMENT_SIZE = 30; // Tamaño fijo para obstáculos y recolectables
+
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
       collectibles = [];
