@@ -21,6 +21,13 @@
       font-size: 20px;
       color: #333;
     }
+    #highScore {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      color: #333;
+    }
     #gameOverScreen {
       display: none;
       position: absolute;
@@ -45,6 +52,7 @@
 </head>
 <body>
   <div id="score">Puntos: 0</div>
+  <div id="highScore">Mejor puntuación: 0</div>
   <div id="gameOverScreen">
     <h1>¡Perdiste!</h1>
     <p>Puntuación final: <span id="finalScore"></span></p>
@@ -58,12 +66,10 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // Variables del juego
-    let player, collectibles, obstacles, score, gameOver;
-
+    let player, collectibles, obstacles, score, gameOver, highScore;
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
-    const ELEMENT_SIZE = 30; // Tamaño fijo para obstáculos y recolectables
+    const ELEMENT_SIZE = 30;
 
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
@@ -71,28 +77,38 @@
       obstacles = [];
       score = 0;
       gameOver = false;
+      highScore = parseInt(localStorage.getItem('highScore')) || 0;
+      document.getElementById('highScore').textContent = `Mejor puntuación: ${highScore}`;
       document.getElementById('gameOverScreen').style.display = 'none';
     }
 
-    // Crear un elemento aleatorio (recolectable u obstáculo) asegurando que no se toquen
     function createElement(type, existingElements) {
       const x = canvas.width;
-      const y = canvas.height - ELEMENT_SIZE - 20; // Cerca del suelo
-      const color = type === 'collectible' ? 'green' : 'red';
-      const newElement = { x, y, size: ELEMENT_SIZE, color, type };
+      const y = canvas.height - ELEMENT_SIZE - 20;
+      const size = ELEMENT_SIZE;
+      let color;
+      let points;
 
-      // Evitar solapamientos
-      for (let i = 0; i < existingElements.length; i++) {
-        const elem = existingElements[i];
+      if (type === 'collectible') {
+        color = Math.random() < 0.1 ? 'gold' : 'green'; // 10% de probabilidad de ser dorado
+        points = color === 'gold' ? 5 : 1;
+      } else {
+        color = 'red';
+      }
+
+      const newElement = { x, y, size, color, type, points };
+
+      for (const elem of existingElements) {
         if (
           newElement.x < elem.x + elem.size &&
           newElement.x + newElement.size > elem.x &&
           newElement.y < elem.y + elem.size &&
           newElement.y + newElement.size > elem.y
         ) {
-          return null; // Devuelve null si hay solapamiento
+          return null; // Solapamiento detectado
         }
       }
+
       return newElement;
     }
 
@@ -105,29 +121,24 @@
         do {
           newCollectible = createElement('collectible', elements);
         } while (!newCollectible);
-
         collectibles.push(newCollectible);
 
         if (Math.random() < 0.7) {
           do {
             newObstacle = createElement('obstacle', elements);
           } while (!newObstacle);
-
           obstacles.push(newObstacle);
         }
       }
     }
 
-    // Generar nuevos elementos periódicamente
     setInterval(generateElements, 1000);
 
-    // Dibujar un cuadrado
     function drawSquare(square) {
       ctx.fillStyle = square.color;
       ctx.fillRect(square.x, square.y, square.size, square.size);
     }
 
-    // Control del salto
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && !player.isJumping && !gameOver) {
         player.isJumping = true;
@@ -135,13 +146,11 @@
       }
     });
 
-    // Actualizar posición del jugador
     function updatePlayer() {
       if (!gameOver) {
         player.y += player.velocity;
         player.velocity += GRAVITY;
 
-        // Evitar que el jugador caiga fuera del suelo
         if (player.y > canvas.height - player.size - 20) {
           player.y = canvas.height - player.size - 20;
           player.isJumping = false;
@@ -149,14 +158,12 @@
       }
     }
 
-    // Actualizar elementos (recolectables y obstáculos)
     function updateElements(elements) {
       for (let i = elements.length - 1; i >= 0; i--) {
         const elem = elements[i];
         elem.x -= 5;
-        if (elem.x + elem.size < 0) elements.splice(i, 1); // Eliminar elementos fuera de la pantalla
+        if (elem.x + elem.size < 0) elements.splice(i, 1);
 
-        // Colisión con el jugador
         if (
           player.x < elem.x + elem.size &&
           player.x + player.size > elem.x &&
@@ -164,7 +171,7 @@
           player.y + player.size > elem.y
         ) {
           if (elem.type === 'collectible') {
-            score++;
+            score += elem.points;
             elements.splice(i, 1);
           } else if (elem.type === 'obstacle') {
             endGame();
@@ -173,39 +180,38 @@
       }
     }
 
-    // Mostrar pantalla de "Game Over"
     function endGame() {
       gameOver = true;
       document.getElementById('finalScore').textContent = score;
       document.getElementById('gameOverScreen').style.display = 'block';
+
+      if (score > highScore) {
+        localStorage.setItem('highScore', score);
+        highScore = score;
+        document.getElementById('highScore').textContent = `Mejor puntuación: ${highScore}`;
+      }
     }
 
-    // Reiniciar el juego
     function restartGame() {
       initializeGame();
       gameLoop();
     }
 
-    // Bucle principal del juego
     function gameLoop() {
       if (gameOver) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Dibujar al jugador
       drawSquare(player);
       updatePlayer();
 
-      // Actualizar y dibujar elementos
       updateElements(collectibles);
       updateElements(obstacles);
 
       collectibles.forEach(drawSquare);
       obstacles.forEach(drawSquare);
 
-      // Actualizar puntuación
       document.getElementById('score').textContent = `Puntos: ${score}`;
-
       requestAnimationFrame(gameLoop);
     }
 
