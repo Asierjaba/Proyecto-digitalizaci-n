@@ -58,12 +58,12 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    let player, collectibles, obstacles, score, gameOver, highScore, speed;
+    let player, collectibles, obstacles, score, gameOver, highScore, speed, spawnInterval;
 
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
-    const ELEMENT_MIN_HEIGHT = 30; // Altura mínima para los obstáculos
-    const ELEMENT_MAX_HEIGHT = 80; // Altura máxima para los obstáculos (puede saltarse)
+    const ELEMENT_MIN_HEIGHT = 30;
+    const ELEMENT_MAX_HEIGHT = 80;
 
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
@@ -72,6 +72,7 @@
       score = 0;
       gameOver = false;
       speed = 5;
+      spawnInterval = 1000; // Tiempo entre elementos en milisegundos
       highScore = parseInt(localStorage.getItem('highScore')) || 0;
       updateScoreDisplay();
       document.getElementById('gameOverScreen').style.display = 'none';
@@ -92,7 +93,6 @@
         color = Math.random() < 0.1 ? 'gold' : 'green'; // 10% probabilidad de ser dorado
         points = color === 'gold' ? 5 : 1;
       } else {
-        // Altura aleatoria para obstáculos
         size = Math.random() * (ELEMENT_MAX_HEIGHT - ELEMENT_MIN_HEIGHT) + ELEMENT_MIN_HEIGHT;
         color = 'red';
       }
@@ -133,7 +133,16 @@
       }
     }
 
-    setInterval(generateElements, 1000);
+    function adjustDifficulty() {
+      if (score % 10 === 0 && score > 0) {
+        speed += 0.2; // Incrementar velocidad gradualmente
+        spawnInterval = Math.max(500, spawnInterval - 20); // Reducir intervalo entre obstáculos, con un mínimo de 500ms
+        clearInterval(spawnTimer);
+        spawnTimer = setInterval(generateElements, spawnInterval);
+      }
+    }
+
+    let spawnTimer = setInterval(generateElements, spawnInterval);
 
     function drawSquare(square) {
       ctx.fillStyle = square.color;
@@ -194,7 +203,9 @@
     }
 
     function restartGame() {
+      clearInterval(spawnTimer);
       initializeGame();
+      spawnTimer = setInterval(generateElements, spawnInterval);
       gameLoop();
     }
 
@@ -212,9 +223,7 @@
       collectibles.forEach(drawSquare);
       obstacles.forEach(drawSquare);
 
-      if (score % 10 === 0 && score > 0) {
-        speed += 0.02; // Incrementar velocidad gradualmente
-      }
+      adjustDifficulty();
 
       requestAnimationFrame(gameLoop);
     }
