@@ -62,7 +62,8 @@
 
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
-    const ELEMENT_SIZE = 30;
+    const ELEMENT_MIN_HEIGHT = 30; // Altura mínima para los obstáculos
+    const ELEMENT_MAX_HEIGHT = 80; // Altura máxima para los obstáculos (puede saltarse)
 
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
@@ -82,8 +83,8 @@
 
     function createElement(type, existingElements) {
       const x = canvas.width;
-      const y = canvas.height - ELEMENT_SIZE - 20;
-      const size = ELEMENT_SIZE;
+      const y = canvas.height - ELEMENT_MIN_HEIGHT - 20;
+      let size = ELEMENT_MIN_HEIGHT;
       let color;
       let points;
 
@@ -91,10 +92,12 @@
         color = Math.random() < 0.1 ? 'gold' : 'green'; // 10% probabilidad de ser dorado
         points = color === 'gold' ? 5 : 1;
       } else {
+        // Altura aleatoria para obstáculos
+        size = Math.random() * (ELEMENT_MAX_HEIGHT - ELEMENT_MIN_HEIGHT) + ELEMENT_MIN_HEIGHT;
         color = 'red';
       }
 
-      const newElement = { x, y, size, color, type, points };
+      const newElement = { x, y: canvas.height - size - 20, size, color, type, points };
 
       for (const elem of existingElements) {
         if (
