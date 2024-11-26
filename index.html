@@ -68,6 +68,8 @@
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
 
+    const API_ENDPOINT = 'https://example.com/submit-score'; // Reemplaza con la URL de tu endpoint
+
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
       collectibles = [];
@@ -149,6 +151,29 @@
       }
     }
 
+    async function sendScoreToServer() {
+      const payload = {
+        userId,
+        score,
+        date: new Date().toISOString(),
+      };
+
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (response.ok) {
+          console.log('Puntuación enviada correctamente:', payload);
+        } else {
+          console.error('Error al enviar la puntuación:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error al conectar con el servidor:', error);
+      }
+    }
+
     function endGame() {
       gameOver = true;
       document.getElementById('finalScore').textContent = score;
@@ -158,6 +183,8 @@
         localStorage.setItem(`highScore_${userId}`, score);
         highScore = score;
       }
+
+      sendScoreToServer();
     }
 
     function startGame() {
