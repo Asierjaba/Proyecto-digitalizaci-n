@@ -50,9 +50,9 @@
     <input type="text" id="userId" placeholder="Número de usuario" />
     <button onclick="startGame()">Comenzar</button>
   </div>
-  <div id="score">Puntos: 0 | Mejor puntuación: 0</div>
+  <div id="score">Usuario: N/A | Puntos: 0 | Mejor puntuación: 0</div>
   <div id="gameOverScreen">
-    <h1>¡Perdiste <span id="userId"></span>!</h1>
+    <h1>¡Perdiste!</h1>
     <p>Puntuación final: <span id="finalScore"></span></p>
     <button onclick="restartGame()">Reiniciar</button>
   </div>
@@ -81,7 +81,7 @@
     }
 
     function updateScoreDisplay() {
-      document.getElementById('score').textContent = `Puntos: ${score} | Mejor puntuación: ${highScore}`;
+      document.getElementById('score').textContent = `Usuario: ${userId} | Puntos: ${score} | Mejor puntuación: ${highScore}`;
     }
 
     function createElement(type) {
@@ -149,16 +149,6 @@
       }
     }
 
-    async function saveScore() {
-      const response = await fetch('<GOOGLE_SHEETS_SCRIPT_URL>', {
-        method: 'POST',
-        body: JSON.stringify({ userId, score }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const result = await response.json();
-      console.log('Score saved:', result);
-    }
-
     function endGame() {
       gameOver = true;
       document.getElementById('finalScore').textContent = score;
@@ -168,8 +158,6 @@
         localStorage.setItem(`highScore_${userId}`, score);
         highScore = score;
       }
-
-      saveScore();
     }
 
     function startGame() {
