@@ -21,7 +21,7 @@
       font-size: 20px;
       color: #333;
     }
-    #gameOverScreen {
+    #gameOverScreen, #userForm {
       display: none;
       position: absolute;
       top: 50%;
@@ -29,7 +29,7 @@
       transform: translate(-50%, -50%);
       text-align: center;
     }
-    #gameOverScreen button {
+    #gameOverScreen button, #userForm button {
       padding: 10px 20px;
       font-size: 18px;
       cursor: pointer;
@@ -38,12 +38,18 @@
       color: white;
       border-radius: 5px;
     }
-    #gameOverScreen button:hover {
+    #gameOverScreen button:hover, #userForm button:hover {
       background-color: #0056b3;
     }
   </style>
 </head>
 <body>
+  <div id="userForm">
+    <h1>Bienvenido al juego</h1>
+    <p>Ingresa tu número de usuario:</p>
+    <input type="text" id="userId" placeholder="Número de usuario" />
+    <button onclick="startGame()">Comenzar</button>
+  </div>
   <div id="score">Puntos: 0 | Mejor puntuación: 0</div>
   <div id="gameOverScreen">
     <h1>¡Perdiste!</h1>
@@ -58,12 +64,9 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    let player, collectibles, obstacles, score, gameOver, highScore, speed, spawnInterval;
-
+    let player, collectibles, obstacles, score, gameOver, highScore, speed, userId;
     const GRAVITY = 0.5;
     const JUMP_FORCE = -12;
-    const ELEMENT_MIN_HEIGHT = 30;
-    const ELEMENT_MAX_HEIGHT = 80;
 
     function initializeGame() {
       player = { x: 50, y: canvas.height - 100, size: 50, color: 'blue', isJumping: false, velocity: 0 };
@@ -72,8 +75,7 @@
       score = 0;
       gameOver = false;
       speed = 5;
-      spawnInterval = 1000; // Tiempo entre elementos en milisegundos
-      highScore = parseInt(localStorage.getItem('highScore')) || 0;
+      highScore = parseInt(localStorage.getItem(`highScore_${userId}`)) || 0;
       updateScoreDisplay();
       document.getElementById('gameOverScreen').style.display = 'none';
     }
@@ -82,67 +84,22 @@
       document.getElementById('score').textContent = `Puntos: ${score} | Mejor puntuación: ${highScore}`;
     }
 
-    function createElement(type, existingElements) {
+    function createElement(type) {
       const x = canvas.width;
-      const y = canvas.height - ELEMENT_MIN_HEIGHT - 20;
-      let size = ELEMENT_MIN_HEIGHT;
-      let color;
-      let points;
-
-      if (type === 'collectible') {
-        color = Math.random() < 0.1 ? 'gold' : 'green'; // 10% probabilidad de ser dorado
-        points = color === 'gold' ? 5 : 1;
-      } else {
-        size = Math.random() * (ELEMENT_MAX_HEIGHT - ELEMENT_MIN_HEIGHT) + ELEMENT_MIN_HEIGHT;
-        color = 'red';
-      }
-
-      const newElement = { x, y: canvas.height - size - 20, size, color, type, points };
-
-      for (const elem of existingElements) {
-        if (
-          newElement.x < elem.x + elem.size &&
-          newElement.x + newElement.size > elem.x &&
-          newElement.y < elem.y + elem.size &&
-          newElement.y + newElement.size > elem.y
-        ) {
-          return null; // Solapamiento detectado
-        }
-      }
-
-      return newElement;
+      const size = Math.random() * 50 + 30;
+      const color = type === 'collectible' ? 'green' : 'red';
+      const points = type === 'collectible' ? 1 : 0;
+      return { x, y: canvas.height - size - 20, size, color, type, points };
     }
 
     function generateElements() {
       if (!gameOver) {
-        const elements = [...collectibles, ...obstacles];
-        let newCollectible = null;
-        let newObstacle = null;
-
-        do {
-          newCollectible = createElement('collectible', elements);
-        } while (!newCollectible);
-        collectibles.push(newCollectible);
-
-        if (Math.random() < 0.7) {
-          do {
-            newObstacle = createElement('obstacle', elements);
-          } while (!newObstacle);
-          obstacles.push(newObstacle);
-        }
+        if (Math.random() < 0.7) obstacles.push(createElement('obstacle'));
+        if (Math.random() < 0.3) collectibles.push(createElement('collectible'));
       }
     }
 
-    function adjustDifficulty() {
-      if (score % 10 === 0 && score > 0) {
-        speed += 0.2; // Incrementar velocidad gradualmente
-        spawnInterval = Math.max(500, spawnInterval - 20); // Reducir intervalo entre obstáculos, con un mínimo de 500ms
-        clearInterval(spawnTimer);
-        spawnTimer = setInterval(generateElements, spawnInterval);
-      }
-    }
-
-    let spawnTimer = setInterval(generateElements, spawnInterval);
+    setInterval(generateElements, 1000);
 
     function drawSquare(square) {
       ctx.fillStyle = square.color;
@@ -172,6 +129,7 @@
       for (let i = elements.length - 1; i >= 0; i--) {
         const elem = elements[i];
         elem.x -= speed;
+
         if (elem.x + elem.size < 0) elements.splice(i, 1);
 
         if (
@@ -191,21 +149,42 @@
       }
     }
 
+    async function saveScore() {
+      const response = await fetch('<GOOGLE_SHEETS_SCRIPT_URL>', {
+        method: 'POST',
+        body: JSON.stringify({ userId, score }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await response.json();
+      console.log('Score saved:', result);
+    }
+
     function endGame() {
       gameOver = true;
       document.getElementById('finalScore').textContent = score;
       document.getElementById('gameOverScreen').style.display = 'block';
 
       if (score > highScore) {
-        localStorage.setItem('highScore', score);
+        localStorage.setItem(`highScore_${userId}`, score);
         highScore = score;
       }
+
+      saveScore();
+    }
+
+    function startGame() {
+      userId = document.getElementById('userId').value;
+      if (!userId) {
+        alert('Por favor, ingresa un número de usuario.');
+        return;
+      }
+      document.getElementById('userForm').style.display = 'none';
+      initializeGame();
+      gameLoop();
     }
 
     function restartGame() {
-      clearInterval(spawnTimer);
       initializeGame();
-      spawnTimer = setInterval(generateElements, spawnInterval);
       gameLoop();
     }
 
@@ -223,13 +202,10 @@
       collectibles.forEach(drawSquare);
       obstacles.forEach(drawSquare);
 
-      adjustDifficulty();
-
       requestAnimationFrame(gameLoop);
     }
 
-    initializeGame();
-    gameLoop();
+    document.getElementById('userForm').style.display = 'block';
   </script>
 </body>
 </html>
